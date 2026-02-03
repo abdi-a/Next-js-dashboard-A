@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^12.6.2",
     "clsx": "^2.1.0",
+    "drizzle-orm": "^0.45.1",
     "jose": "^5.2.2",
     "lucide-react": "^0.344.0",
     "next": "latest",
@@ -25,6 +27,7 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "autoprefixer": "^10.0.1",
+    "drizzle-kit": "^0.31.8",
     "eslint": "^8",
     "eslint-config-next": "latest",
     "postcss": "^8",

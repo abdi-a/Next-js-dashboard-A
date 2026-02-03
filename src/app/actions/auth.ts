@@ -4,6 +4,9 @@ import { z } from 'zod'
 import { createSession, deleteSession } from '@/lib/session'
 import { redirect } from 'next/navigation'
 import { SignupFormSchema, LoginFormSchema } from '@/lib/definitions'
+import { db } from '@/lib/db'
+import { users } from '@/lib/schema'
+import { eq } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 
 export async function signup(prevState: any, formData: FormData) {
@@ -16,22 +19,42 @@ export async function signup(prevState: any, formData: FormData) {
     }
   }
  
-  // 2. Prepare data for insertion
   const { name, email, password } = result.data
+
+  // 2. Check if user already exists
+  // We explicitly check this to show a friendly error
+  const existingUser = await db.select().from(users).where(eq(users.email, email)).get()
+  
+  if (existingUser) {
+      return {
+          errors: {
+              email: ['An account with this email already exists.']
+          }
+      }
+  }
   
   // 3. Hash the password
-  // In a real app, strict salt rounds are recommended (e.g., 10)
   const hashedPassword = await bcrypt.hash(password, 10)
  
   // 4. Save the user to the database
-  // MOCK: In a real app, assume we insert into a 'users' table
-  // const user = await db.insert(users).values({ name, email, password: hashedPassword }).returning()
+  // .returning() isn't fully supported in all SQLite drivers easily without setup, 
+  // so we insert and then grabbing the ID or using .run() which returns info.
+  // Drizzle + BetterSQLite3: .returning() works fine usually.
+  const resultObj = await db
+      .insert(users)
+      .values({ name, email, password: hashedPassword })
+      .returning({ insertedId: users.id })
+
+  if (!resultObj || resultObj.length === 0) {
+      return {
+          message: 'An error occurred while creating your account.'
+      }
+  }
   
-  // For this tutorial, we will Simulate a successful DB insertion by using a mock ID
-  const mockUserId = '1' 
+  const userId = resultObj[0].insertedId.toString()
 
   // 5. Create user session
-  await createSession(mockUserId)
+  await createSession(userId)
  
   // 6. Redirect to dashboard
   redirect('/dashboard')
@@ -50,33 +73,26 @@ export async function login(prevState: any, formData: FormData) {
   const { email, password } = result.data
 
   // 2. Lookup user 
-  // MOCK: We'll pretend the user exists and the has matches if the email is 'user@example.com'
-  // In real life: const user = await db.query.users.findFirst({ where: eq(users.email, email) })
+  const user = await db.select().from(users).where(eq(users.email, email)).get()
   
-  // Mock logic for tutorial:
-  if (email !== 'user@example.com') {
+  if (!user) {
+      // Security: Generic error message to prevent sniffing
       return {
-          message: 'Invalid credentials. (Hint: Use user@example.com)'
+          message: 'Invalid email or password.'
       }
   }
 
   // 3. Compare password
-  // In real life: const match = await bcrypt.compare(password, user.password)
-  // For tutorial, we'll accept any password since we can't really check against a non-existent DB record's hash 
-  // UNLESS we hardcode a hash. Let's hardcode a hash for 'password123' for better realism? 
-  // Actually, simpler is better for the *Action* flow explanation.
-  
-  // Let's pretend it matched
-  const isMatch = true 
+  const isMatch = await bcrypt.compare(password, user.password)
 
   if (!isMatch) {
        return {
-          message: 'Invalid credentials.'
+          message: 'Invalid email or password.'
       }
   }
  
   // 4. Create session
-  await createSession('1') // Mock User ID
+  await createSession(user.id.toString())
  
   // 5. Redirect
   redirect('/dashboard')
