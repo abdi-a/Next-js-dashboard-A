@@ -5,7 +5,7 @@ import { createSession, deleteSession } from '@/lib/session'
 import { redirect } from 'next/navigation'
 import { SignupFormSchema, LoginFormSchema } from '@/lib/definitions'
 import { db } from '@/lib/db'
-import { users } from '@/lib/schema'
+import { users, students } from '@/lib/schema'
 import { eq } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 
@@ -37,9 +37,6 @@ export async function signup(prevState: any, formData: FormData) {
   const hashedPassword = await bcrypt.hash(password, 10)
  
   // 4. Save the user to the database
-  // .returning() isn't fully supported in all SQLite drivers easily without setup, 
-  // so we insert and then grabbing the ID or using .run() which returns info.
-  // Drizzle + BetterSQLite3: .returning() works fine usually.
   const resultObj = await db
       .insert(users)
       .values({ name, email, password: hashedPassword })
@@ -52,6 +49,19 @@ export async function signup(prevState: any, formData: FormData) {
   }
   
   const userId = resultObj[0].insertedId.toString()
+
+  // 4.1 Create a Student Record automatically (Integration for "Real Data")
+  // For this demo, every signup is treated as a student enrollment.
+  const studentId = `S-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+  
+  await db.insert(students).values({
+      name: name,
+      email: email,
+      studentId: studentId,
+      course: "General Studies", // Default assignment
+      enrolledAt: new Date(),
+      status: "Active"
+  });
 
   // 5. Create user session
   await createSession(userId)
