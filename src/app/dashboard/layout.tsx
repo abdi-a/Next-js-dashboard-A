@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { LayoutDashboard, User, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { logout } from '@/app/actions/auth';
+import SideNav from './sidenav';
 
 export default function DashboardLayout({
   children,
@@ -23,16 +24,7 @@ export default function DashboardLayout({
             </div>
 
             {/* Nav Links */}
-            <nav className="flex-grow space-y-2">
-                <Link href="/dashboard" className="flex items-center gap-3 p-3 rounded-md hover:bg-slate-800 transition-colors">
-                    <LayoutDashboard size={20} />
-                    <span>Dashboard</span>
-                </Link>
-                <Link href="/dashboard/profile" className="flex items-center gap-3 p-3 rounded-md hover:bg-slate-800 transition-colors">
-                    <User size={20} />
-                    <span>Profile</span>
-                </Link>
-            </nav>
+            <SideNav />
 
             {/* Logout */}
             <form action={logout}>

@@ -4,8 +4,7 @@ import { z } from 'zod'
 import { createSession, deleteSession } from '@/lib/session'
 import { redirect } from 'next/navigation'
 import { SignupFormSchema, LoginFormSchema } from '@/lib/definitions'
-// import bcrypt from 'bcryptjs' // We'll uncomment this when we install types if needed, or use require for simplicity if types fail
-const bcrypt = require('bcryptjs')
+import bcrypt from 'bcryptjs'
 
 export async function signup(prevState: any, formData: FormData) {
   // 1. Validate form fields
